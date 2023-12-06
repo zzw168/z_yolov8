@@ -1,0 +1,12 @@
+path: 20231112_ball_100/
+train: 'train/images'
+val: 'valid/images'
+
+# class names
+names:
+  0: '6'
+  1: '1'
+  2: '2'
+  3: '5'
+  4: '4'
+  5: '3'
