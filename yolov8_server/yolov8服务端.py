@@ -225,7 +225,7 @@ def run():
     model = YOLO("best.pt")
     color = (0, 255, 0)
     # 正式
-    target_width, target_height =960,540 #1920, 1000
+    target_width, target_height = 960, 540  # 1920, 1000
     cap_array = []
     for i in range(4):
         cap_num = i * 2
@@ -289,6 +289,8 @@ def run():
                                 result_count = lap_count1 - lap_count
                                 if result_count >= max_region_count:
                                     r_item[8] = r_item[8] + 1
+                                    if r_item[8] > 2:
+                                        reset_ranking_array()
                             r_item[:8] = q_item[:8]
                             r_item[9] = 1
                             replaced = True
