@@ -19,8 +19,8 @@ def json2txt(path_json, path_txt):
                 ftxt.writelines(strxy + "\n")
 
 
-dir_json = 'json/'
-dir_txt = 'txt/'
+dir_json = 'jsons/'
+dir_txt = 'txts/'
 if not os.path.exists(dir_txt):
     os.makedirs(dir_txt)
 list_json = os.listdir(dir_json)

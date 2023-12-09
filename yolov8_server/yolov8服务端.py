@@ -43,7 +43,7 @@ def load_Initialization():
     返回：
     无
     示例：
-    对0,2,4,6,8,10摄像头的初始化数据进行加载
+    对0,2,4,6,8,10 摄像头的初始化数据进行加载
     :return:
     """
     print("加载初始化")
@@ -261,7 +261,8 @@ def run():
                         array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
                                  round(r[4].item(), 2), names[int(r[5].item())]]
                         cv2.rectangle(frame, (array[0], array[1]), (array[2], array[3]), color, thickness=3)
-                        cv2.putText(frame, array[5] + f"{array[4]}", (array[0], array[1] - 5), cv2.FONT_HERSHEY_SIMPLEX,
+                        cv2.putText(frame, "%s %s" % (array[5], str(array[4])), (array[0], array[1] - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
                                     fontScale=1,
                                     color=(0, 0, 255), thickness=2)
                         qiu_array.append(array)
