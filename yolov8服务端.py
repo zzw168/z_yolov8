@@ -17,7 +17,7 @@ class PolygonArray:
         self.fangxiang = fangxiang
 
 
-def set_cap(cap):
+def set_cap(cap):  # 设置视频截图参数
     W = 1920
     H = 1080
     W1 = 0.0
@@ -65,8 +65,9 @@ def load_duobianxing(saidao_path, txt_name):
         if len(lines1) > 1:
             item = lines1[0].split(',')
             for item1 in item:
-                x, y = item1.split('/')
-                coordinates.append((int(x), int(y)))
+                if item1:
+                    x, y = item1.split('/')
+                    coordinates.append((int(x), int(y)))
             polgon_array.duobianxing = coordinates
             polgon_array.daima = int(lines1[1])
             if len(lines1) >= 3:  # 无赛道方向代码，不添加
@@ -370,7 +371,7 @@ if __name__ == "__main__":
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
     max_lap_count = 2  # 最大圈
-    max_region_count = 13 - 1  # 最大区域
+    max_region_count = 13 - 2  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
     load_Initialization()
     run_toggle = True
@@ -378,18 +379,6 @@ if __name__ == "__main__":
     run_thread.start()
     # 线程启动
     http()
-=======
-from ultralytics import YOLO
-import cv2
-import threading
-import time
-import numpy as np
-import os
-import socket
-import json
-# http
-from http.server import BaseHTTPRequestHandler, HTTPServer
-
 
 class PolygonArray:
     def __init__(self, duobianxing, daima, fangxiang):
@@ -757,4 +746,3 @@ if __name__ == "__main__":
     run_thread.start()
     # 线程启动
     http()
->>>>>>> origin/master
