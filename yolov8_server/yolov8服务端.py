@@ -10,14 +10,14 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
-class PolygonArray:
+class PolygonArray:  # 定义多边形数组结构体
     def __init__(self, duobianxing, daima, fangxiang):
         self.duobianxing = duobianxing
         self.daima = daima
         self.fangxiang = fangxiang
 
 
-def set_cap(cap):  # 设置视频截图参数
+def set_cap(cap):  # 设置视频截图参数（不压缩图片，节省压缩过程时间）
     W = 1920
     H = 1080
     W1 = 0.0
@@ -98,24 +98,25 @@ def reset_ranking_array():
 
 def sort_key(player):
     data = player
-    if data[7] == 2:
-        return (1, -data[1])  # 从大到小
-    elif data[7] == 8:
-        return (2, data[1])  # 从小到大
-    elif data[7] == 4:
-        return (3, data[0])  # 从小到大
-    elif data[7] == 6:
-        return (4, -data[0])  # 从大到小
-    return (5,)
+    if data[7] == 0:
+        return data[0]  # x从小到大
+    elif data[7] == 1:
+        return -data[0]  # x从大到小
+    elif data[7] == 10:
+        return -data[1]  # y从大到小
+    elif data[7] == 11:
+        return data[1]  # y从小到大
+
+    return data[0]
 
 
 def direction_ranking(ranking_array1):
-    unique_types = set()
+    # unique_types = set()
     matching_indices = {}  # 在区域内所有可见的球的索引数组
     for i, item in enumerate(ranking_array1):
         record_type = item[6]  # 所在出现球的区域号码
-        unique_types.add(record_type)
-        if item[9] == 1:
+        # unique_types.add(record_type)
+        if item[9] == 1:  # 球可见
             if record_type not in matching_indices:
                 matching_indices[record_type] = []
             matching_indices[record_type].append(i)  # 按区域顺序添加有球的区域，并在区域内添加球的索引
@@ -126,9 +127,9 @@ def direction_ranking(ranking_array1):
     for item in new_array:
         replacement_position_array = []  # 单个区域内的所有球数组
         for item1 in item:
-            replacement_position_array.append(ranking_array[item1])  # 单个区域内添加所有球的详细信息
+            replacement_position_array.append(ranking_array[item1])  # 添加单个区域内所有球的详细信息
             # print("1")
-        sorted_array = sorted(replacement_position_array, key=sort_key)  # 按方向排名 单个区域内的所有球
+        sorted_array = sorted(replacement_position_array, key=sort_key)  # 单个区域内的所有球按方向排名
         for i, index in enumerate(item):
             ranking_array[index] = sorted_array[i]  # 按照每个区里面的球排名 重新排列区内的球
     return ranking_array  # 返回最终排名数组
@@ -306,9 +307,11 @@ def run():
                 con_data = []
                 for item in ranking_array:
                     con_item = dict(zip(keys, item))  # 把数组打包成字典
-                    con_data.append(con_item)
+                    con_data.append(con_item["name"])
                 jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                send_ranking(jsonString)  # 发送给接收端
+                # send_ranking(jsonString)  # 发送给接收端
+
+                print(jsonString)
             resized_images = []
             for i, item in enumerate(integration_frame_array):
                 # item=cv2.resize(item,(target_width, target_height))
