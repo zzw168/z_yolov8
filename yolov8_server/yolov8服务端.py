@@ -175,7 +175,7 @@ def processRanking(qiu_array, img, key):
     key=摄像头号，用来执行对应赛道代码判断
     """
     # print("开始过程排名")
-    daima_arra = []
+    # daima_arra = []
     qiu_array1 = []
 
     for b in qiu_array:
@@ -217,7 +217,7 @@ def filter_max_value(lists):  # 在区域范围内如果出现两个相同的球
         fifth_element = sublist[4]
         sixth_element = sublist[5]
         max_value_for_sixth_element = max_values[sixth_element]
-        if fifth_element == max_value_for_sixth_element:
+        if fifth_element == max_value_for_sixth_element:  # 选取置信度最大的球添加到修正后的队列
             filtered_list.append(sublist)
     return filtered_list
 
