@@ -191,7 +191,7 @@ def ws_handler(conn):
     print("ws_handler")
     with WebsocketServer(conn) as ws:
         while True:
-            time.sleep(1)
+            time.sleep(2)
             # msg = ws.recv()
             # if ws.state == -1:
             #     break
