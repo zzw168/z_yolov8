@@ -199,7 +199,7 @@ def processRanking(qiu_array, img, key):
             pts = np.array(d.duobianxing, np.int32)
             for e in value_array:
                 if d.daima == e:
-                    polygonColor = (0, 0, 255)
+                    polygonColor = (255, 0, 255)
                 else:
                     polygonColor = (0, 255, 255)
                 cv2.polylines(img, [pts], isClosed=True, color=polygonColor, thickness=3)
@@ -282,19 +282,19 @@ def run():
                 # 选出误判，并只保留置信度最高的目标
                 integration_qiu_array = filter_max_value(integration_qiu_array)
                 # 先更新数据
-                for r_item in ranking_array:  # 处理圈数（上一次位置，和当前位置的差值大于等于12为一圈）
+                for r_item in ranking_array:
                     replaced = False
                     for q_item in integration_qiu_array:
-                        if r_item[5] == q_item[5]:
+                        if r_item[5] == q_item[5]:  # 更新 ranking_array
                             lap_count = q_item[6]
                             lap_count1 = r_item[6]
-                            if lap_count < lap_count1:
+                            if lap_count < lap_count1:  # 处理圈数（上一次位置，和当前位置的差值大于等于12为一圈）
                                 result_count = lap_count1 - lap_count
                                 if result_count >= max_region_count:
                                     r_item[8] = r_item[8] + 1
                                     if r_item[8] > 2:
                                         reset_ranking_array()
-                            r_item[:8] = q_item[:8]
+                            r_item[:8] = q_item[:8]  # 更新 ranking_array（指针）
                             r_item[9] = 1
                             replaced = True
                             break
