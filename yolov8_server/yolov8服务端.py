@@ -323,6 +323,7 @@ def run():
             canvas[0:target_height, target_width:1920] = resized_images[1]  # 右上角
             canvas[target_height:1080, 0:target_width] = resized_images[2]  # 左下角
             canvas[target_height:1080, target_width:1920] = resized_images[3]  # 右下角
+            cv2.namedWindow("display", cv2.WINDOW_NORMAL)
             cv2.imshow("display", canvas)
             # cv2.imshow('display',integration_frame_array[1])
             cv2.waitKey(1)
