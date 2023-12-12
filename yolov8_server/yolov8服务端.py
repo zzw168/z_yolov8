@@ -198,7 +198,7 @@ def processRanking(qiu_array, img, key):
         for d in saidaodaima[key]:  # 画出多边形触发
             pts = np.array(d.duobianxing, np.int32)
             for e in value_array:
-                if d == e:
+                if d.daima == e:
                     polygonColor = (0, 0, 255)
                 else:
                     polygonColor = (0, 255, 255)
