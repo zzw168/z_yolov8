@@ -243,7 +243,7 @@ def run():
         cv2.imwrite(f"{cap_num}.jpg", frame)
         cap_array.append(cap)
     while True:
-        if run_toggle == True:
+        if run_toggle:
             integration_qiu_array = []
             integration_frame_array = []
             for i, cap in enumerate(cap_array):
