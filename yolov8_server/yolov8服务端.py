@@ -301,8 +301,9 @@ def run():
                     if not replaced:
                         r_item[9] = 0
 
-                ranking_array.sort(key=lambda x: (x[8], x[6]), reverse=True)  # 先根据圈数，区域排序数组
+                ranking_array.sort(key=lambda x: (x[6]), reverse=True)  # 区域排序数组
                 ranking_array = direction_ranking(ranking_array)  # 再根据区域内位置排序
+                ranking_array.sort(key=lambda x: (x[8]), reverse=True)  # 最后根据圈数排序数组
                 print(ranking_array)
                 con_data = []
                 for item in ranking_array:
