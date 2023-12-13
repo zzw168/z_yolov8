@@ -308,9 +308,9 @@ def run():
                 con_data = []
                 for item in ranking_array:
                     con_item = dict(zip(keys, item))  # 把数组打包成字典
-                    con_data.append(con_item["name"])
+                    con_data.append(con_item)
                 jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                # send_ranking(jsonString)  # 发送给接收端
+                send_ranking(jsonString)  # 发送给接收端
 
                 print(jsonString)
             resized_images = []
