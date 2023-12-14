@@ -95,10 +95,6 @@ def reset_ranking_array():
         # [0, 0, 0, 0, 0, 'fen', 0, 0, 0, 0],
         # [0, 0, 0, 0, 0, 'slv', 0, 0, 0, 0]
     ]
-    # previous_position = {}
-    # for i in range(0, len(ranking_array)):
-    #     previous_position[ranking_array[i][5]] = 0
-    # print(previous_position)
 
 
 def sort_key(player):
@@ -130,7 +126,6 @@ def direction_ranking(ranking_array1):
     for item in new_array:
         replacement_position_array = []  # 单个区域内的所有球数组
         for item1 in item:
-            # replacement_position_array.append(ranking_array[item1])  # 添加单个区域内所有球的详细信息
             replacement_position_array.append([])  # 添加单个区域内所有球的详细信息
             for r_i in range(0, len(ranking_array[item1])):
                 replacement_position_array[len(replacement_position_array) - 1].append(ranking_array[item1][r_i])
@@ -262,7 +257,6 @@ def run():
                 if len(results) != 0:  # 整合球的数据
                     names = results[0].names
                     result = results[0].boxes.data
-                    # print(result)
                     for r in result:
                         array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
                                  round(r[4].item(), 2), names[int(r[5].item())]]
@@ -380,7 +374,6 @@ if __name__ == "__main__":
     saidaodaima = {0: [], 2: [], 4: [], 6: []}  # 上面x，下面就是x:[]
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
-    # previous_position = {}
     max_lap_count = 2  # 最大圈
     max_region_count = 13 - 3  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
