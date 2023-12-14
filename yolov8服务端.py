@@ -130,7 +130,6 @@ def direction_ranking(ranking_array1):
     for item in new_array:
         replacement_position_array = []  # 单个区域内的所有球数组
         for item1 in item:
-            # replacement_position_array.append(ranking_array[item1])  # 添加单个区域内所有球的详细信息
             replacement_position_array.append([])  # 添加单个区域内所有球的详细信息
             for r_i in range(0, len(ranking_array[item1])):
                 replacement_position_array[len(replacement_position_array) - 1].append(ranking_array[item1][r_i])
@@ -262,7 +261,6 @@ def run():
                 if len(results) != 0:  # 整合球的数据
                     names = results[0].names
                     result = results[0].boxes.data
-                    # print(result)
                     for r in result:
                         array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
                                  round(r[4].item(), 2), names[int(r[5].item())]]
