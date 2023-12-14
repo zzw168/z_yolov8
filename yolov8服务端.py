@@ -82,6 +82,7 @@ def reset_ranking_array():
     # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     """
     global ranking_array
+    # global previous_position
     ranking_array = [
         [0, 0, 0, 0, 0, 'hong', 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 'cheng', 0, 0, 0, 0],
@@ -94,6 +95,10 @@ def reset_ranking_array():
         # [0, 0, 0, 0, 0, 'fen', 0, 0, 0, 0],
         # [0, 0, 0, 0, 0, 'slv', 0, 0, 0, 0]
     ]
+    # previous_position = {}
+    # for i in range(0, len(ranking_array)):
+    #     previous_position[ranking_array[i][5]] = 0
+    # print(previous_position)
 
 
 def sort_key(player):
@@ -111,11 +116,9 @@ def sort_key(player):
 
 
 def direction_ranking(ranking_array1):
-    # unique_types = set()
     matching_indices = {}  # 在区域内所有可见的球的索引数组
     for i, item in enumerate(ranking_array1):
         record_type = item[6]  # 所在出现球的区域号码
-        # unique_types.add(record_type)
         if item[9] == 1:  # 球可见
             if record_type not in matching_indices:
                 matching_indices[record_type] = []
@@ -127,8 +130,10 @@ def direction_ranking(ranking_array1):
     for item in new_array:
         replacement_position_array = []  # 单个区域内的所有球数组
         for item1 in item:
-            replacement_position_array.append(ranking_array[item1])  # 添加单个区域内所有球的详细信息
-            # print("1")
+            # replacement_position_array.append(ranking_array[item1])  # 添加单个区域内所有球的详细信息
+            replacement_position_array.append([])  # 添加单个区域内所有球的详细信息
+            for r_i in range(0, len(ranking_array[item1])):
+                replacement_position_array[len(replacement_position_array) - 1].append(ranking_array[item1][r_i])
         sorted_array = sorted(replacement_position_array, key=sort_key)  # 单个区域内的所有球按方向排名
         for i, index in enumerate(item):
             ranking_array[index] = sorted_array[i]  # 按照每个区里面的球排名 重新排列区内的球
@@ -257,7 +262,7 @@ def run():
                 if len(results) != 0:  # 整合球的数据
                     names = results[0].names
                     result = results[0].boxes.data
-                    print(result)
+                    # print(result)
                     for r in result:
                         array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
                                  round(r[4].item(), 2), names[int(r[5].item())]]
@@ -282,7 +287,7 @@ def run():
                 # 选出误判，并只保留置信度最高的目标
                 integration_qiu_array = filter_max_value(integration_qiu_array)
                 # 先更新数据
-                for r_item in ranking_array:
+                for r_index, r_item in enumerate(ranking_array):
                     replaced = False
                     for q_item in integration_qiu_array:
                         if r_item[5] == q_item[5]:  # 更新 ranking_array
@@ -291,28 +296,27 @@ def run():
                             if lap_count < lap_count1:  # 处理圈数（上一次位置，和当前位置的差值大于等于12为一圈）
                                 result_count = lap_count1 - lap_count
                                 if result_count >= max_region_count:
-                                    r_item[8] = r_item[8] + 1
-                                    if r_item[8] > 2:
-                                        reset_ranking_array()
-                            r_item[:8] = q_item[:8]  # 更新 ranking_array（指针）
-                            r_item[9] = 1
+                                    ranking_array[r_index][8] += 1
+                                    # if ranking_array[r_index][8] > 2:
+                                    #     reset_ranking_array()
+                            for r_i in range(0, 8):
+                                ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
+                            ranking_array[r_index][9] = 1
                             replaced = True
                             break
                     if not replaced:
-                        r_item[9] = 0
+                        ranking_array[r_index][9] = 0
 
                 ranking_array.sort(key=lambda x: (x[6]), reverse=True)  # 区域排序数组
                 ranking_array = direction_ranking(ranking_array)  # 再根据区域内球位置排序
                 ranking_array.sort(key=lambda x: (x[8]), reverse=True)  # 最后根据圈数排序数组
-                print(ranking_array)
+                # print(ranking_array)
                 con_data = []
                 for item in ranking_array:
                     con_item = dict(zip(keys, item))  # 把数组打包成字典
-                    con_data.append(con_item["name"])
+                    con_data.append(con_item)
                 jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                # send_ranking(jsonString)  # 发送给接收端
-
-                print(jsonString)
+                send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
                 # item=cv2.resize(item,(target_width, target_height))
@@ -376,8 +380,9 @@ if __name__ == "__main__":
     saidaodaima = {0: [], 2: [], 4: [], 6: []}  # 上面x，下面就是x:[]
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
+    # previous_position = {}
     max_lap_count = 2  # 最大圈
-    max_region_count = 13 - 2  # 统计一圈的位置差
+    max_region_count = 13 - 3  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
     load_Initialization()
     run_toggle = True
