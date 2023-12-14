@@ -95,10 +95,6 @@ def reset_ranking_array():
         # [0, 0, 0, 0, 0, 'fen', 0, 0, 0, 0],
         # [0, 0, 0, 0, 0, 'slv', 0, 0, 0, 0]
     ]
-    # previous_position = {}
-    # for i in range(0, len(ranking_array)):
-    #     previous_position[ranking_array[i][5]] = 0
-    # print(previous_position)
 
 
 def sort_key(player):
@@ -378,7 +374,6 @@ if __name__ == "__main__":
     saidaodaima = {0: [], 2: [], 4: [], 6: []}  # 上面x，下面就是x:[]
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
-    # previous_position = {}
     max_lap_count = 2  # 最大圈
     max_region_count = 13 - 3  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
