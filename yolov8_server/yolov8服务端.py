@@ -308,7 +308,6 @@ def run():
                         ranking_array[r_index][9] = 0
 
                 ranking_array.sort(key=lambda x: (x[6]), reverse=True)  # 区域排序数组
-                ranking_array.sort(key=lambda x: (x[8]), reverse=True)  # 最后根据圈数排序数组
                 ranking_array = direction_ranking(ranking_array)  # 再根据区域内球位置排序
                 ranking_array.sort(key=lambda x: (x[8]), reverse=True)  # 最后根据圈数排序数组
                 # print(ranking_array)
