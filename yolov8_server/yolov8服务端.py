@@ -202,7 +202,7 @@ def processRanking(qiu_array, img, key):
                     polygonColor = (255, 0, 255)
                 else:
                     polygonColor = (0, 255, 255)
-                cv2.polylines(img, [pts], isClosed=True, color=polygonColor, thickness=3)
+                cv2.polylines(img, [pts], isClosed=True, color=polygonColor, thickness=8)
     return qiu_array1, img
 
 
