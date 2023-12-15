@@ -294,7 +294,7 @@ def run():
                                     if ranking_array[r_index][8] > max_lap_count:
                                         ranking_array[r_index][8] = 0
                             for r_i in range(0, 8):
-                                if ranking_array[r_index][6] - q_item[6] > 10 or ranking_array[r_index][6] == 0 or \
+                                if ranking_array[r_index][6] - q_item[6] > 8 or ranking_array[r_index][6] == 0 or \
                                         q_item[6] - ranking_array[r_index][6] < 6:
                                     ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
                             ranking_array[r_index][9] = 1
@@ -380,7 +380,7 @@ if __name__ == "__main__":
     saidaodaima = {0: [], 2: [], 4: [], 6: []}  # 上面x，下面就是x:[]
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
-    max_lap_count = 5  # 最大圈
+    max_lap_count = 8  # 最大圈
     max_region_count = 13 - 2  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
     load_Initialization()
