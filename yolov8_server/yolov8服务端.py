@@ -268,7 +268,7 @@ def run():
                         qiu_array.append(array)
                 if len(qiu_array):  # 处理范围内跟排名
                     # print("处理范围内排名")
-                    qiu_array, frame = processRanking(qiu_array, frame, cap_num)  # 晒算出范围内的球并绘制多边形
+                    qiu_array, frame = processRanking(qiu_array, frame, cap_num)  # 统计各个范围内的球，并绘制多边形
                     # cv2.imshow('img',frame)
                     # cv2.waitKey(1)
                     integration_frame_array.append(frame)
@@ -281,20 +281,21 @@ def run():
                 # 选出误判，并只保留置信度最高的目标
                 integration_qiu_array = filter_max_value(integration_qiu_array)
                 # 先更新数据
-                for r_index, r_item in enumerate(ranking_array):
+                for r_index in range(0, len(ranking_array)):
                     replaced = False
                     for q_item in integration_qiu_array:
-                        if r_item[5] == q_item[5]:  # 更新 ranking_array
+                        if ranking_array[r_index][5] == q_item[5]:  # 更新 ranking_array
                             lap_count = q_item[6]
-                            lap_count1 = r_item[6]
+                            lap_count1 = ranking_array[r_index][6]
                             if lap_count < lap_count1:  # 处理圈数（上一次位置，和当前位置的差值大于等于12为一圈）
                                 result_count = lap_count1 - lap_count
                                 if result_count >= max_region_count:
                                     ranking_array[r_index][8] += 1
-                                    # if ranking_array[r_index][8] > 2:
-                                    #     reset_ranking_array()
+                                    if ranking_array[r_index][8] > max_lap_count:
+                                        ranking_array[r_index][8] = 0
                             for r_i in range(0, 8):
-                                ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
+                                if ranking_array[r_index][5] == q_item[5]:
+                                    ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
                             ranking_array[r_index][9] = 1
                             replaced = True
                             break
@@ -306,10 +307,14 @@ def run():
                 ranking_array.sort(key=lambda x: (x[8]), reverse=True)  # 最后根据圈数排序数组
                 # print(ranking_array)
                 con_data = []
+                con_data1 = []
                 for item in ranking_array:
                     con_item = dict(zip(keys, item))  # 把数组打包成字典
                     con_data.append(con_item)
+                    con_data1.append(con_item["name"])
                 jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
+                jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
+                print(jsonString1)
                 send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
