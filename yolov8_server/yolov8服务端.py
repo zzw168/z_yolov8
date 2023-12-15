@@ -295,7 +295,7 @@ def run():
                                         ranking_array[r_index][8] = 0
                             for r_i in range(0, 8):
                                 if ranking_array[r_index][6] - q_item[6] > 10 or ranking_array[r_index][6] == 0 or \
-                                        q_item[6] - ranking_array[r_index][6] < 3:
+                                        q_item[6] - ranking_array[r_index][6] < 6:
                                     ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
                             ranking_array[r_index][9] = 1
                             replaced = True
