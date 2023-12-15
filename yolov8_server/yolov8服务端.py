@@ -294,7 +294,8 @@ def run():
                                     if ranking_array[r_index][8] > max_lap_count:
                                         ranking_array[r_index][8] = 0
                             for r_i in range(0, 8):
-                                if ranking_array[r_index][5] == q_item[5]:
+                                if ranking_array[r_index][6] - q_item[6] > 10 or ranking_array[r_index][6] == 0 or \
+                                        q_item[6] - ranking_array[r_index][6] < 3:
                                     ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
                             ranking_array[r_index][9] = 1
                             replaced = True
@@ -380,7 +381,7 @@ if __name__ == "__main__":
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
     max_lap_count = 5  # 最大圈
-    max_region_count = 13 - 3  # 统计一圈的位置差
+    max_region_count = 13 - 2  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
     load_Initialization()
     run_toggle = True
