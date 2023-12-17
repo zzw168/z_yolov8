@@ -323,13 +323,13 @@ def run():
                 # cv2.imshow(str(i), item)
                 resized_img = cv2.resize(item, (target_width, target_height))
                 resized_images.append(resized_img)
-            canvas = np.zeros((1620, 1920, 3), dtype=np.uint8)
+            canvas = np.zeros((1080, 1920 + target_width, 3), dtype=np.uint8)
             canvas[0:target_height, 0:target_width] = resized_images[0]  # 左上角
             canvas[0:target_height, target_width:1920] = resized_images[1]  # 右上角
             canvas[target_height:1080, 0:target_width] = resized_images[2]  # 左下角
             canvas[target_height:1080, target_width:1920] = resized_images[3]  # 右下角
-            canvas[1080:1620, 0:target_width] = resized_images[4]  # 左下角
-            canvas[1080:1620, target_width:1920] = resized_images[5]  # 右下角
+            canvas[0:target_height, 1920:1920 + target_width] = resized_images[4]  # 左下角
+            canvas[target_height:1080, 1920:1920 + target_width] = resized_images[5]  # 右下角
             cv2.namedWindow("display", cv2.WINDOW_NORMAL)
             cv2.imshow("display", canvas)
             # cv2.imshow('display',integration_frame_array[1])

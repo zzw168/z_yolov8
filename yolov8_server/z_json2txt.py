@@ -26,7 +26,8 @@ if not os.path.exists(dir_txt):
 list_json = os.listdir(dir_json)
 for cnt, json_name in enumerate(list_json):
     print('cnt=%d,name=%s' % (cnt, json_name))
-    path_json = dir_json + json_name
-    path_txt = dir_txt + json_name.replace('.json', '.txt')
-    # print(path_json, path_txt)
-    json2txt(path_json, path_txt)
+    if ".json" in json_name:
+        path_json = dir_json + json_name
+        path_txt = dir_txt + json_name.replace('.json', '.txt')
+        # print(path_json, path_txt)
+        json2txt(path_json, path_txt)
