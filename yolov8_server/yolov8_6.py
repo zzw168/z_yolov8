@@ -339,6 +339,28 @@ def run():
 
 # 上面都是推理的
 
+def find_move(frame):
+    # 灰度
+    cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # 去噪（高斯）
+    blur = cv2.GaussianBlur(frame, (3, 3), 5)
+    # 去背影
+    mask = bgsubmog.apply(blur)
+
+    # 腐蚀， 去掉图中小斑块
+    erode = cv2.erode(mask, kernel)
+
+    # 膨胀， 还原放大
+    dilate = cv2.dilate(erode, kernel, iterations=3)
+
+    # 闭操作，去掉物体内部的小块
+    close = cv2.morphologyEx(dilate, cv2.MORPH_CLOSE, kernel)
+    close = cv2.morphologyEx(close, cv2.MORPH_CLOSE, kernel)
+
+    cnts, h = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    return cnts, h
+
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
@@ -376,14 +398,19 @@ def http():
 # 上面是http处理
 if __name__ == "__main__":
     server_address = ("192.168.0.224", 19733)
-    saidaohao_array = [0, 2, 4, 6]  # 根据摄像头数量修改
-    saidaodaima = {0: [], 2: [], 4: [], 6: []}  # 上面x，下面就是x:[]
+    saidaohao_array = [0, 2, 4, 6, 8, 10]  # 根据摄像头数量修改
+    saidaodaima = {0: [], 2: [], 4: [], 6: [], 8: [], 10: []}  # 上面x，下面就是x:[]
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
     max_lap_count = 8  # 最大圈
     max_region_count = 13 - 2  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
     load_Initialization()
+
+    bgsubmog = cv2.bgsegm.createBackgroundSubtractorMOG()
+
+    # 形态学kernel
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     run_toggle = True
     run_thread = threading.Thread(target=run)
     run_thread.start()
