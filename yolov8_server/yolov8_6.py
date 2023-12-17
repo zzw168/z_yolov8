@@ -229,7 +229,7 @@ def run():
     # 正式
     target_width, target_height = 960, 540  # 1920, 1000
     cap_array = []
-    for i in range(4):
+    for i in range(6):
         cap_num = i * 2
         # cap = cv2.VideoCapture(f'{cap_num}.mp4')
         cap = cv2.VideoCapture(cap_num)
@@ -316,18 +316,20 @@ def run():
                 jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
                 jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
                 print(jsonString1)
-                send_ranking(jsonString)  # 发送给接收端
+                # send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
                 # item=cv2.resize(item,(target_width, target_height))
                 # cv2.imshow(str(i), item)
                 resized_img = cv2.resize(item, (target_width, target_height))
                 resized_images.append(resized_img)
-            canvas = np.zeros((1080, 1920, 3), dtype=np.uint8)
+            canvas = np.zeros((1620, 1920, 3), dtype=np.uint8)
             canvas[0:target_height, 0:target_width] = resized_images[0]  # 左上角
             canvas[0:target_height, target_width:1920] = resized_images[1]  # 右上角
             canvas[target_height:1080, 0:target_width] = resized_images[2]  # 左下角
             canvas[target_height:1080, target_width:1920] = resized_images[3]  # 右下角
+            canvas[1080:1620, 0:target_width] = resized_images[4]  # 左下角
+            canvas[1080:1620, target_width:1920] = resized_images[5]  # 右下角
             cv2.namedWindow("display", cv2.WINDOW_NORMAL)
             cv2.imshow("display", canvas)
             # cv2.imshow('display',integration_frame_array[1])
