@@ -309,13 +309,14 @@ def run():
                 # print(ranking_array)
                 con_data = []
                 con_data1 = []
-                for item in ranking_array:
-                    con_item = dict(zip(keys, item))  # 把数组打包成字典
+                for i in range(0, len(ranking_array)):
+                    con_item = dict(zip(keys, ranking_array[i]))  # 把数组打包成字典
                     con_data.append(con_item)
-                    con_data1.append(con_item["name"])
-                jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
-                print(jsonString1)
+                    if i == 1:
+                        con_data1.append(con_item["position"])
+                        jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
+                        print(jsonString1)
+                # jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
                 # send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
@@ -323,13 +324,14 @@ def run():
                 # cv2.imshow(str(i), item)
                 resized_img = cv2.resize(item, (target_width, target_height))
                 resized_images.append(resized_img)
-            canvas = np.zeros((1080, 1920 + target_width, 3), dtype=np.uint8)
-            canvas[0:target_height, 0:target_width] = resized_images[0]  # 左上角
-            canvas[0:target_height, target_width:1920] = resized_images[1]  # 右上角
-            canvas[target_height:1080, 0:target_width] = resized_images[2]  # 左下角
-            canvas[target_height:1080, target_width:1920] = resized_images[3]  # 右下角
-            canvas[0:target_height, 1920:1920 + target_width] = resized_images[4]  # 左下角
-            canvas[target_height:1080, 1920:1920 + target_width] = resized_images[5]  # 右下角
+            canvas = np.zeros((1080 + target_height, 1920, 3), dtype=np.uint8)
+            canvas[0:target_height, 0:target_width] = resized_images[4]  # 左下角
+            canvas[target_height:1080, 0:target_width] = resized_images[5]  # 右下角
+            canvas[1080:1080 + target_height, 0:target_width] = resized_images[0]  # 左上角
+            canvas[0:target_height, target_width:1920] = resized_images[3]  # 右上角
+            canvas[target_height:1080, target_width:1920] = resized_images[2]  # 左下角
+            canvas[1080:1080 + target_height, target_width:1920] = resized_images[1]  # 右下角
+
             cv2.namedWindow("display", cv2.WINDOW_NORMAL)
             cv2.imshow("display", canvas)
             # cv2.imshow('display',integration_frame_array[1])
@@ -340,29 +342,6 @@ def run():
 
 
 # 上面都是推理的
-
-def find_move(frame):
-    # 灰度
-    cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # 去噪（高斯）
-    blur = cv2.GaussianBlur(frame, (3, 3), 5)
-    # 去背影
-    mask = bgsubmog.apply(blur)
-
-    # 腐蚀， 去掉图中小斑块
-    erode = cv2.erode(mask, kernel)
-
-    # 膨胀， 还原放大
-    dilate = cv2.dilate(erode, kernel, iterations=3)
-
-    # 闭操作，去掉物体内部的小块
-    close = cv2.morphologyEx(dilate, cv2.MORPH_CLOSE, kernel)
-    close = cv2.morphologyEx(close, cv2.MORPH_CLOSE, kernel)
-
-    cnts, h = cv2.findContours(close, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    return cnts, h
-
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
