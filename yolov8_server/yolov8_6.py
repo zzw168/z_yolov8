@@ -377,6 +377,12 @@ def http():
     print('Starting server...')
     httpd.serve_forever()
 
+def z_udp(send_data):
+    # 1. 创建udp套接字
+    udp_socket = socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_socket.sendto(send_data.encode('utf-8'), server_address)
+    # 5. 关闭套接字
+    udp_socket.close()
 
 # 上面是http处理
 if __name__ == "__main__":
