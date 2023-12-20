@@ -1,7 +1,7 @@
 task: detect
 mode: train
 model: models/ball_100_v1.pt
-data: ./datasets/20231115_ball_30/20231115_ball_30.yaml
+data: ./datasets/20231112_ball_100/20231112_ball_100.yaml
 epochs: 300
 patience: 50
 batch: 10

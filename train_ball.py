@@ -4,12 +4,12 @@ import multiprocessing
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()    # 避免重复执行
-    # model = YOLO("yolov8n.yaml")
-    model = YOLO("models/ball_100_v1.pt")          # 载入预训练模型
+    model = YOLO("yolov8n.yaml")
+    # model = YOLO("models/ball_100_v1.pt")          # 载入预训练模型
 
-    results = model.train(data='./datasets/20231115_ball_30/20231115_ball_30.yaml',
+    results = model.train(data='./datasets/z_test/z_test.yaml',
                           imgsz=640,
-                          epochs=300,
+                          epochs=30,
                           patience=50,
                           batch=10,
                           project='20231115_ball_30',

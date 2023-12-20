@@ -4,7 +4,8 @@ import threading
 import time
 import numpy as np
 import os
-import socket
+# import socket
+from socket import *
 import json
 # http
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -84,12 +85,13 @@ def reset_ranking_array():
     global ranking_array
     # global previous_position
     ranking_array = [
-        [0, 0, 0, 0, 0, 'hong', 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 'cheng', 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 'huang', 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 'lv', 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 'zi', 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 'lan', 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 'qiu', 0, 0, 0, 0],
+        # [0, 0, 0, 0, 0, 'hong', 0, 0, 0, 0],
+        # [0, 0, 0, 0, 0, 'cheng', 0, 0, 0, 0],
+        # [0, 0, 0, 0, 0, 'huang', 0, 0, 0, 0],
+        # [0, 0, 0, 0, 0, 'lv', 0, 0, 0, 0],
+        # [0, 0, 0, 0, 0, 'zi', 0, 0, 0, 0],
+        # [0, 0, 0, 0, 0, 'lan', 0, 0, 0, 0],
         # [0, 0, 0, 0, 0, 'lan', 0, 0, 0, 0],
         # [0, 0, 0, 0, 0, 'huang', 0, 0, 0, 0],
         # [0, 0, 0, 0, 0, 'fen', 0, 0, 0, 0],
@@ -224,7 +226,7 @@ def filter_max_value(lists):  # 在区域范围内如果出现两个相同的球
 
 def run():
     global ranking_array
-    model = YOLO("best.pt")
+    model = YOLO("best_6.pt")
     color = (0, 255, 0)
     # 正式
     target_width, target_height = 960, 540  # 1920, 1000
@@ -252,14 +254,17 @@ def run():
                 if not ret:
                     print("读取帧失败")
                     continue
-                results = model.predict(source=frame, show=False, conf=0.75, iou=0.45, imgsz=1280)
+                results = model.predict(source=frame, show=False, conf=0.15, iou=0.45, imgsz=1280)
+                # results = model.track(source=10, conf=0.3, iou=0.5, show=True)
                 qiu_array = []
                 if len(results) != 0:  # 整合球的数据
                     names = results[0].names
                     result = results[0].boxes.data
+                    print(result)
                     for r in result:
                         array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
                                  round(r[4].item(), 2), names[int(r[5].item())]]
+                        print(array)
                         cv2.rectangle(frame, (array[0], array[1]), (array[2], array[3]), color, thickness=3)
                         cv2.putText(frame, "%s %s" % (array[5], str(array[4])), (array[0], array[1] - 5),
                                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -312,14 +317,16 @@ def run():
                 for i in range(0, len(ranking_array)):
                     con_item = dict(zip(keys, ranking_array[i]))  # 把数组打包成字典
                     con_data.append(con_item)
-                    if i == 1:
+                    if i == 0:
                         # con_data1.append(con_item["position"])
                         # send_ranking(con_item["position"])  # 发送给接收端
                         # jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
                         print(con_item["position"])
-                        send_ranking(con_item["position"])  # 发送给接收端
-                # jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                # send_ranking(jsonString1)  # 发送给接收端
+                        z_udp(str(con_item["position"]))
+                        # send_ranking(con_item["position"])  # 发送给接收端
+                jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
+                print(jsonString)
+                # send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
                 # item=cv2.resize(item,(target_width, target_height))
@@ -379,7 +386,10 @@ def http():
 
 def z_udp(send_data):
     # 1. 创建udp套接字
-    udp_socket = socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_socket = socket(AF_INET, SOCK_DGRAM)
+    # 2. 准备接收方的地址
+    # dest_addr = ('127.0.0.1', 8080)
+    # 4. 发送数据到指定的电脑上
     udp_socket.sendto(send_data.encode('utf-8'), server_address)
     # 5. 关闭套接字
     udp_socket.close()

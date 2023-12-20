@@ -1,0 +1,12 @@
+path: z_test/
+train: 'train'
+val: 'val'
+
+# class names
+names:
+  0: huang
+  1: lan
+  2: hong
+  3: zi
+  4: cheng
+  5: lv

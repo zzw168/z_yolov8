@@ -13,5 +13,6 @@ from ultralytics import YOLO
 from ultralytics import YOLO
 
 # 配置追踪参数并运行追踪器
-model = YOLO('yolov8n.pt')
-results = model.track(source="https://youtu.be/6c3-vK72jnY", conf=0.3, iou=0.5, show=True)
+model = YOLO('best_6.pt')
+results = model.track(source=4, conf=0.3, iou=0.5, show=True)
+# print(results[0].tojson())
