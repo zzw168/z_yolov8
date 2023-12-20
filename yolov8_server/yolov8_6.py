@@ -4,7 +4,8 @@ import threading
 import time
 import numpy as np
 import os
-import socket
+# import socket
+from socket import *
 import json
 # http
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -312,14 +313,16 @@ def run():
                 for i in range(0, len(ranking_array)):
                     con_item = dict(zip(keys, ranking_array[i]))  # 把数组打包成字典
                     con_data.append(con_item)
-                    if i == 1:
+                    if i == 0:
                         # con_data1.append(con_item["position"])
                         # send_ranking(con_item["position"])  # 发送给接收端
                         # jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
                         print(con_item["position"])
-                        send_ranking(con_item["position"])  # 发送给接收端
-                # jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                # send_ranking(jsonString1)  # 发送给接收端
+                        z_udp(str(con_item["position"]))
+                        # send_ranking(con_item["position"])  # 发送给接收端
+                jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
+                print(jsonString)
+                # send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
                 # item=cv2.resize(item,(target_width, target_height))
@@ -379,7 +382,10 @@ def http():
 
 def z_udp(send_data):
     # 1. 创建udp套接字
-    udp_socket = socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_socket = socket(AF_INET, SOCK_DGRAM)
+    # 2. 准备接收方的地址
+    # dest_addr = ('127.0.0.1', 8080)
+    # 4. 发送数据到指定的电脑上
     udp_socket.sendto(send_data.encode('utf-8'), server_address)
     # 5. 关闭套接字
     udp_socket.close()
