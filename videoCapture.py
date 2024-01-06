@@ -19,14 +19,14 @@ def save_image(image, addr, num):
 
 j = 0
 for m in range(10):
-    videoCapture = cv2.VideoCapture("./datasets/video_2/" + str(m + 1) + '.mkv')
+    videoCapture = cv2.VideoCapture("/home/z/桌面/123/" + str(m + 1) + '.avi')
 
     # videoCapture=cv2.VideoCapture(1)
 
     # 读帧
     success, frame = videoCapture.read()
 
-    timeF = 50  # 按需更改
+    timeF = 30  # 按需更改
     i = 0
     while success:
         i = i + 1
@@ -34,7 +34,7 @@ for m in range(10):
             s = 10000
             j = j + 1
             s += j
-            save_image(frame, './datasets/images_1/', s)
+            save_image(frame, '/home/z/桌面/123/images_1/', s)
             # print('save image:',i)
         success, frame = videoCapture.read()
 

@@ -224,6 +224,20 @@ def filter_max_value(lists):  # 在区域范围内如果出现两个相同的球
     return filtered_list
 
 
+def filter_first_value(lists):
+    re_list = []
+    first = lists[0]
+    for a_list in lists:
+        if a_list[6] < 16 and ranking_array[0][6] >= 35:
+            if first[6] < a_list[6]:
+                first = a_list
+        elif first[6] < a_list[6]:
+            first = a_list
+    re_list.append(first)
+    print(re_list)
+    return re_list
+
+
 def run():
     global ranking_array
     model = YOLO("best_6.pt")
@@ -231,6 +245,8 @@ def run():
     # 正式
     target_width, target_height = 960, 540  # 1920, 1000
     cap_array = []
+    cv2.namedWindow("display", cv2.WINDOW_NORMAL)
+    cv2.resizeWindow("display", 1150, 1600)
     for i in range(6):
         cap_num = i * 2
         # cap = cv2.VideoCapture(f'{cap_num}.mp4')
@@ -254,17 +270,17 @@ def run():
                 if not ret:
                     print("读取帧失败")
                     continue
-                results = model.predict(source=frame, show=False, conf=0.15, iou=0.45, imgsz=1280)
+                results = model.predict(source=frame, show=False, conf=0.5, iou=0.45, imgsz=1280)
                 # results = model.track(source=10, conf=0.3, iou=0.5, show=True)
                 qiu_array = []
                 if len(results) != 0:  # 整合球的数据
                     names = results[0].names
                     result = results[0].boxes.data
-                    print(result)
+                    # print(result)
                     for r in result:
                         array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
                                  round(r[4].item(), 2), names[int(r[5].item())]]
-                        print(array)
+                        # print(array)
                         cv2.rectangle(frame, (array[0], array[1]), (array[2], array[3]), color, thickness=3)
                         cv2.putText(frame, "%s %s" % (array[5], str(array[4])), (array[0], array[1] - 5),
                                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -283,8 +299,12 @@ def run():
                     integration_frame_array.append(frame)
 
             if len(integration_qiu_array) != 0:
+                for i in range(0, len(integration_qiu_array)):
+                    # print(integration_qiu_array[i][6])
+                    z_udp(str(integration_qiu_array[i][6]))
                 # 选出误判，并只保留置信度最高的目标
-                integration_qiu_array = filter_max_value(integration_qiu_array)
+                # integration_qiu_array = filter_max_value(integration_qiu_array)
+                integration_qiu_array = filter_first_value(integration_qiu_array)
                 # 先更新数据
                 for r_index in range(0, len(ranking_array)):
                     replaced = False
@@ -295,12 +315,14 @@ def run():
                             if lap_count < lap_count1:  # 处理圈数（上一次位置，和当前位置的差值大于等于12为一圈）
                                 result_count = lap_count1 - lap_count
                                 if result_count >= max_region_count:
-                                    ranking_array[r_index][8] += 1
+                                    # ranking_array[r_index][8] += 1
                                     if ranking_array[r_index][8] > max_lap_count:
                                         ranking_array[r_index][8] = 0
                             for r_i in range(0, 8):
-                                if ranking_array[r_index][6] == 0 or \
-                                        q_item[6] - ranking_array[r_index][6] < 6:
+                                if (ranking_array[r_index][6] == 0
+                                    or (q_item[6] > ranking_array[r_index][6] and q_item[6] -
+                                        ranking_array[r_index][6] < 6)) or (
+                                        q_item[6] < 3 and ranking_array[r_index][6] >= 35):
                                     ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
                             ranking_array[r_index][9] = 1
                             replaced = True
@@ -318,14 +340,14 @@ def run():
                     con_item = dict(zip(keys, ranking_array[i]))  # 把数组打包成字典
                     con_data.append(con_item)
                     if i == 0:
-                        # con_data1.append(con_item["position"])
+                        con_data1.append(con_item["position"])
                         # send_ranking(con_item["position"])  # 发送给接收端
-                        # jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
+                        jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
                         print(con_item["position"])
-                        z_udp(str(con_item["position"]))
+                        # z_udp(str(con_item["position"]))
                         # send_ranking(con_item["position"])  # 发送给接收端
-                jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                print(jsonString)
+                # jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
+                # print(jsonString)
                 # send_ranking(jsonString)  # 发送给接收端
             resized_images = []
             for i, item in enumerate(integration_frame_array):
@@ -335,13 +357,13 @@ def run():
                 resized_images.append(resized_img)
             canvas = np.zeros((1080 + target_height, 1920, 3), dtype=np.uint8)
             canvas[0:target_height, 0:target_width] = resized_images[4]  # 左下角
-            canvas[target_height:1080, 0:target_width] = resized_images[5]  # 右下角
-            canvas[1080:1080 + target_height, 0:target_width] = resized_images[0]  # 左上角
+            canvas[target_height:1080, 0:target_width] = resized_images[2]  # 右下角
+            canvas[1080:1080 + target_height, 0:target_width] = resized_images[5]  # 左上角
             canvas[0:target_height, target_width:1920] = resized_images[3]  # 右上角
-            canvas[target_height:1080, target_width:1920] = resized_images[2]  # 左下角
+            canvas[target_height:1080, target_width:1920] = resized_images[0]  # 左下角
             canvas[1080:1080 + target_height, target_width:1920] = resized_images[1]  # 右下角
 
-            cv2.namedWindow("display", cv2.WINDOW_NORMAL)
+            # cv2.namedWindow("display", cv2.WINDOW_NORMAL)
             cv2.imshow("display", canvas)
             # cv2.imshow('display',integration_frame_array[1])
             cv2.waitKey(1)
@@ -384,6 +406,7 @@ def http():
     print('Starting server...')
     httpd.serve_forever()
 
+
 def z_udp(send_data):
     # 1. 创建udp套接字
     udp_socket = socket(AF_INET, SOCK_DGRAM)
@@ -394,22 +417,24 @@ def z_udp(send_data):
     # 5. 关闭套接字
     udp_socket.close()
 
+
 # 上面是http处理
 if __name__ == "__main__":
+    # server_address = ("127.0.0.1", 8080)
     server_address = ("192.168.0.200", 19733)
     saidaohao_array = [0, 2, 4, 6, 8, 10]  # 根据摄像头数量修改
     saidaodaima = {0: [], 2: [], 4: [], 6: [], 8: [], 10: []}  # 上面x，下面就是x:[]
     ranking_array = []  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     reset_ranking_array()  # 重置排名数组
     max_lap_count = 8  # 最大圈
-    max_region_count = 13 - 2  # 统计一圈的位置差
+    max_region_count = 35 - 2  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
     load_Initialization()
 
-    bgsubmog = cv2.bgsegm.createBackgroundSubtractorMOG()
+    # bgsubmog = cv2.bgsegm.createBackgroundSubtractorMOG()
 
     # 形态学kernel
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     run_toggle = True
     run_thread = threading.Thread(target=run)
     run_thread.start()
