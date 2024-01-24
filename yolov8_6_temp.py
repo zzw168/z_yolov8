@@ -6,8 +6,8 @@ import threading
 import time
 import numpy as np
 import os
-# import socket
-from socket import *
+import socket
+# from socket import *
 import json
 # http
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -85,6 +85,7 @@ def reset_ranking_array():
     # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
     """
     global ranking_array
+    global ball_sort
     # global previous_position
     ranking_array = [
         [0, 0, 0, 0, 0, 'huang', 0, 0, 0, 0],
@@ -98,16 +99,22 @@ def reset_ranking_array():
         [0, 0, 0, 0, 0, 'zong', 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 'lv', 0, 0, 0, 0]
     ]
+    ball_sort = []
+    for i in range(0, max_region_count + 1):
+        ball_sort.append([])
+        for j in range(0, max_lap_count):
+            ball_sort[i].append([])
+    # print(ball_sort)
 
 
-def sort_ranking():
+def sort_ranking(q_ar):
     global ranking_array
+    global ball_sort
     # 1.排序区域
     for i in range(0, len(ranking_array)):  # 冒泡排序
         for j in range(0, len(ranking_array) - i - 1):
             if ranking_array[j][6] < ranking_array[j + 1][6]:
                 ranking_array[j], ranking_array[j + 1] = ranking_array[j + 1], ranking_array[j]
-
     # 2.区域内排序
     for i in range(0, len(ranking_array)):  # 冒泡排序
         for j in range(0, len(ranking_array) - i - 1):
@@ -129,6 +136,23 @@ def sort_ranking():
         for j in range(0, len(ranking_array) - i - 1):
             if ranking_array[j][8] < ranking_array[j + 1][8]:
                 ranking_array[j], ranking_array[j + 1] = ranking_array[j + 1], ranking_array[j]
+    # 4.寄存器排序
+    for i in range(0, len(ranking_array)):
+        if not (ranking_array[i][5] in ball_sort[ranking_array[i][6]][ranking_array[i][8]]):
+            ball_sort[ranking_array[i][6]][ranking_array[i][8]].append(ranking_array[i][5])  # 添加寄存器球排序
+
+    for i in range(0, len(ranking_array)):
+        for j in range(0, len(ranking_array) - i - 1):
+            if (ranking_array[i][6] == ranking_array[j][6]) and (ranking_array[i][8] == ranking_array[j][8]):
+                m = 0
+                n = 0
+                for k in range(0, len(ball_sort[ranking_array[i][6]][ranking_array[i][8]])):
+                    if ranking_array[i][5] == ball_sort[ranking_array[i][6]][ranking_array[i][8]][k]:
+                        n = k
+                    elif ranking_array[j][5] == ball_sort[ranking_array[j][6]][ranking_array[j][8]][k]:
+                        m = k
+                if n < m:
+                    ranking_array[i], ranking_array[j] = ranking_array[j], ranking_array[i]
 
 
 def send_ranking(jsonstr):
@@ -338,6 +362,7 @@ def run():
             if len(integration_qiu_array) != 0:
                 print(integration_qiu_array1)
                 z_udp(str(integration_qiu_array1), server_address_data)  # 发送数据
+                # z_udp(str(integration_qiu_array1), server_self_rank)  # 发送给接收端
 
                 for i in range(0, len(integration_qiu_array)):
                     z_udp(str(integration_qiu_array[i][6]), server_address)  # 发送区域号
@@ -375,15 +400,15 @@ def deal_rank(integration_qiu_array):
             if ranking_array[r_index][5] == q_item[5]:  # 更新 ranking_array
                 if q_item[6] < ranking_array[r_index][6]:  # 处理圈数（上一次位置，和当前位置的差值大于等于12为一圈）
                     result_count = ranking_array[r_index][6] - q_item[6]
-                    if result_count >= max_region_count - 2:
+                    if result_count >= max_region_count - 6:
                         ranking_array[r_index][8] += 1
                         if ranking_array[r_index][8] > max_lap_count - 1:
                             ranking_array[r_index][8] = 0
                 if ((ranking_array[6] == 0)
                         or (q_item[6] >= ranking_array[r_index][6] and
-                            (q_item[6] - ranking_array[r_index][6] <= 5
-                             or ranking_array[0][6] - ranking_array[r_index][6] > 5))
-                        or (q_item[6] < 6 and ranking_array[r_index][6] >= max_region_count - 6)):
+                            (q_item[6] - ranking_array[r_index][6] <= 3
+                             or ranking_array[0][6] - ranking_array[r_index][6] > 3))
+                        or (q_item[6] < 8 and ranking_array[r_index][6] >= max_region_count - 8)):
                     for r_i in range(0, len(q_item)):
                         ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
                     ranking_array[r_index][9] = 1
@@ -391,7 +416,7 @@ def deal_rank(integration_qiu_array):
                 break
         if not replaced:
             ranking_array[r_index][9] = 0
-    sort_ranking()
+    sort_ranking(integration_qiu_array)
 
 
 # 上面都是推理的
@@ -431,7 +456,7 @@ def http():
 
 def z_udp(send_data, address):
     # 1. 创建udp套接字
-    udp_socket = socket(AF_INET, SOCK_DGRAM)
+    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # 2. 准备接收方的地址
     # dest_addr = ('127.0.0.1', 8080)
     # 4. 发送数据到指定的电脑上
@@ -444,7 +469,7 @@ def z_reset():
     while True:
         time.sleep(5)
         if ranking_array[0][8] == max_lap_count - 1 and ranking_array[0][6] == max_region_count:
-            time.sleep(10)
+            time.sleep(20)
             reset_ranking_array()
 
 
@@ -469,16 +494,14 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 0, 'zong', 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 'lv', 0, 0, 0, 0]
     ]  # 前0~3是坐标↖↘,4=置信度，5=名称,6=赛道区域，7=方向排名,8=圈数,9=0不可见 1可见.
-    reset_ranking_array()  # 重置排名数组
     max_lap_count = 2  # 最大圈
     max_region_count = 35  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
+    ball_sort = []  # 位置寄存器
+
+    reset_ranking_array()  # 重置排名数组
     load_Initialization()
 
-    # bgsubmog = cv2.bgsegm.createBackgroundSubtractorMOG()
-
-    # 形态学kernel
-    # kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     run_toggle = True
     run_thread = threading.Thread(target=run)
     run_thread.start()
