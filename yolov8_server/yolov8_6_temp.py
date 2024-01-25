@@ -99,7 +99,8 @@ def reset_ranking_array():
         [0, 0, 0, 0, 0, 'zong', 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 'lv', 0, 0, 0, 0]
     ]
-    ball_sort = []
+
+    ball_sort = []  # 位置寄存器
     for i in range(0, max_region_count + 1):
         ball_sort.append([])
         for j in range(0, max_lap_count):
@@ -107,7 +108,7 @@ def reset_ranking_array():
     # print(ball_sort)
 
 
-def sort_ranking(q_ar):
+def sort_ranking():
     global ranking_array
     global ball_sort
     # 1.排序区域
@@ -140,19 +141,20 @@ def sort_ranking(q_ar):
     for i in range(0, len(ranking_array)):
         if not (ranking_array[i][5] in ball_sort[ranking_array[i][6]][ranking_array[i][8]]):
             ball_sort[ranking_array[i][6]][ranking_array[i][8]].append(ranking_array[i][5])  # 添加寄存器球排序
-
+            # if ranking_array[i][6] == 35 and ranking_array[i][8] == 1:
+            #     print(ball_sort[ranking_array[i][6]][ranking_array[i][8]])
     for i in range(0, len(ranking_array)):
         for j in range(0, len(ranking_array) - i - 1):
             if (ranking_array[i][6] == ranking_array[j][6]) and (ranking_array[i][8] == ranking_array[j][8]):
                 m = 0
                 n = 0
-                for k in range(0, len(ball_sort[ranking_array[i][6]][ranking_array[i][8]])):
-                    if ranking_array[i][5] == ball_sort[ranking_array[i][6]][ranking_array[i][8]][k]:
+                for k in range(0, len(ball_sort[ranking_array[j][6]][ranking_array[j][8]])):
+                    if ranking_array[j][5] == ball_sort[ranking_array[j][6]][ranking_array[j][8]][k]:
                         n = k
-                    elif ranking_array[j][5] == ball_sort[ranking_array[j][6]][ranking_array[j][8]][k]:
+                    elif ranking_array[j + 1][5] == ball_sort[ranking_array[j][6]][ranking_array[j][8]][k]:
                         m = k
-                if n < m:
-                    ranking_array[i], ranking_array[j] = ranking_array[j], ranking_array[i]
+                if n > m:
+                    ranking_array[j], ranking_array[j + 1] = ranking_array[j + 1], ranking_array[j]
 
 
 def send_ranking(jsonstr):
@@ -404,10 +406,10 @@ def deal_rank(integration_qiu_array):
                         ranking_array[r_index][8] += 1
                         if ranking_array[r_index][8] > max_lap_count - 1:
                             ranking_array[r_index][8] = 0
-                if ((ranking_array[6] == 0)
+                if ((ranking_array[r_index][6] == 0)
                         or (q_item[6] >= ranking_array[r_index][6] and
                             (q_item[6] - ranking_array[r_index][6] <= 3
-                             or ranking_array[0][6] - ranking_array[r_index][6] > 3))
+                             or ranking_array[0][6] - ranking_array[r_index][6] > 5))
                         or (q_item[6] < 8 and ranking_array[r_index][6] >= max_region_count - 8)):
                     for r_i in range(0, len(q_item)):
                         ranking_array[r_index][r_i] = q_item[r_i]  # 更新 ranking_array
@@ -416,7 +418,7 @@ def deal_rank(integration_qiu_array):
                 break
         if not replaced:
             ranking_array[r_index][9] = 0
-    sort_ranking(integration_qiu_array)
+    sort_ranking()
 
 
 # 上面都是推理的
@@ -497,7 +499,6 @@ if __name__ == "__main__":
     max_lap_count = 2  # 最大圈
     max_region_count = 35  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
-    ball_sort = []  # 位置寄存器
 
     reset_ranking_array()  # 重置排名数组
     load_Initialization()
