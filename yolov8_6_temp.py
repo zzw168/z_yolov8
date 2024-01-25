@@ -145,7 +145,7 @@ def sort_ranking():
             #     print(ball_sort[ranking_array[i][6]][ranking_array[i][8]])
     for i in range(0, len(ranking_array)):
         for j in range(0, len(ranking_array) - i - 1):
-            if (ranking_array[i][6] == ranking_array[j][6]) and (ranking_array[i][8] == ranking_array[j][8]):
+            if (ranking_array[j][6] == ranking_array[j+1][6]) and (ranking_array[j][8] == ranking_array[j+1][8]):
                 m = 0
                 n = 0
                 for k in range(0, len(ball_sort[ranking_array[j][6]][ranking_array[j][8]])):
@@ -341,22 +341,27 @@ def run():
                         integration_qiu_array.extend(qiu_array)
                         integration_qiu_array1.extend(qiu_array1)
 
-                        # 选出误判，并只保留置信度最高的目标
-                        integration_qiu_array = filter_max_value(integration_qiu_array)
+                        '''
+                            算法分离
+                        '''
+                        z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据
 
-                        deal_rank(integration_qiu_array)
-                        con_data = []
-                        con_data1 = []
-                        for k in range(0, len(ranking_array)):
-                            con_item = dict(zip(keys, ranking_array[k]))  # 把数组打包成字典
-                            con_data.append(con_item)
-                            con_data1.append(
-                                [con_item['name'], con_item['position'], con_item['lapCount']])
-                        jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
-                        jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
-                        # print(jsonString)
-                        z_udp(jsonString, server_address_rank)  # 发送结果
-                        z_udp(jsonString1, server_self_rank)  # 发送给接收端
+                        # 选出误判，并只保留置信度最高的目标
+                        # integration_qiu_array = filter_max_value(integration_qiu_array)
+                        #
+                        # deal_rank(integration_qiu_array)
+                        # con_data = []
+                        # con_data1 = []
+                        # for k in range(0, len(ranking_array)):
+                        #     con_item = dict(zip(keys, ranking_array[k]))  # 把数组打包成字典
+                        #     con_data.append(con_item)
+                        #     con_data1.append(
+                        #         [con_item['name'], con_item['position'], con_item['lapCount']])
+                        # jsonString = json.dumps(con_data, indent=4, ensure_ascii=False)
+                        # jsonString1 = json.dumps(con_data1, indent=4, ensure_ascii=False)
+                        # # print(jsonString)
+                        # z_udp(jsonString, server_address_rank)  # 发送结果
+                        # z_udp(jsonString1, server_self_rank)  # 发送给接收端
 
                 else:
                     integration_frame_array.append(frame)
