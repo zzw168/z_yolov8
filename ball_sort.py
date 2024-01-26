@@ -1,10 +1,11 @@
+import base64
+import hashlib
 import json
 import socket
+import struct
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
-
-import z_pingpong
 
 
 def deal_rank(integration_qiu_array):
@@ -166,26 +167,10 @@ def to_num(res):
                 z_response[i], z_response[j] = z_response[j], z_response[i]
 
 
-def z_udp(send_data, address):
-    # 1. 创建udp套接字
-    udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # 2. 准备接收方的地址
-    # dest_addr = ('127.0.0.1', 8080)
-    # 4. 发送数据到指定的电脑上
-    udp_socket.sendto(send_data.encode('utf-8'), address)
-    # 5. 关闭套接字
-    udp_socket.close()
-
-
-def z_udp_socket():
-    # 2. 绑定本地的相关信息，如果一个网络程序不绑定，则系统会随机分配
-    local_addr = ('127.0.0.1', 8080)  # ip地址和端口号，ip一般不用写，表示本机的任何一个ip
-    udp_socket.bind(local_addr)
+def udp_handler(udp_data, udp_addr):
     while True:
         try:
-            # 3. 等待接收对方发送的数据
-            recv_data = udp_socket.recvfrom(10240)  # 1024表示本次接收的最大字节数
-            res = recv_data[0].decode('utf8')
+            res = udp_data.decode('utf8')
             # res = json.loads(res)
             array_data = eval(res)
             deal_rank(array_data)
@@ -201,8 +186,175 @@ def z_udp_socket():
         except:
             print("UDP数据接收出错!")
             break
-    # 5. 关闭套接字
-    udp_socket.close()
+
+
+HTTP_RESPONSE = "HTTP/1.1 {code} {msg}\r\n" \
+                "Server:LyricTool\r\n" \
+                "Date:{date}\r\n" \
+                "Content-Length:{length}\r\n" \
+                "\r\n" \
+                "{content}\r\n"
+STATUS_CODE = {200: 'OK', 501: 'Not Implemented'}
+UPGRADE_WS = "HTTP/1.1 101 Switching Protocols\r\n" \
+             "Connection: Upgrade\r\n" \
+             "Upgrade: websocket\r\n" \
+             "Sec-WebSocket-Accept: {}\r\n" \
+             "WebSocket-Protocol: chat\r\n\r\n"
+
+
+def sec_key_gen(msg):
+    key = msg + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
+    ser_key = hashlib.sha1(key.encode('utf-8')).digest()
+    return base64.b64encode(ser_key).decode()
+
+
+class WebsocketServer:
+    def __init__(self, conn):
+        # 接受一个socket对象
+        self.conn = conn
+        self.state = 0
+
+    def open(self):
+        self._handshake()
+        if self.state == 1:
+            return self
+        else:
+            raise Exception('Handsake failed.')
+
+    def __enter__(self):
+        return self.open()
+
+    def getstate(self):
+        # 获取连接状态
+        state_map = {0: 'READY', 1: 'CONNECTION ESTABLISHED', 2: 'HANDSHAKED', 3: 'FAILED', -1: 'CLOSED'}
+        return self.state, state_map[self.state]
+
+    def _handshake(self):
+        raw_data = b''
+        while True:
+            fragment = self.conn.recv(1024)
+            raw_data += fragment
+            if len(fragment) < 1024:
+                break
+        data = raw_data.decode('utf-8')
+        header, content = data.split('\r\n\r\n', 1)
+        header = header.split('\r\n')
+        options = map(lambda i: i.split(': '), header[1:])
+        options_dict = {item[0]: item[1] for item in options}
+        date = time.strftime("%m,%d%Y", time.localtime())
+        if 'Sec-WebSocket-Key' not in options_dict:
+            self.conn.send(
+                bytes(HTTP_RESPONSE.format(code=501, msg=STATUS_CODE[501], date=date, length=len(date), content=date),
+                      encoding='utf-8'))
+            self.conn.close()
+            self.state = 3
+            return True
+        else:
+            self.state = 2
+            self._build(options_dict['Sec-WebSocket-Key'])
+            return True
+
+    def _build(self, sec_key):
+        # 建立WebSocket连接
+        response = UPGRADE_WS.format(sec_key_gen(sec_key))
+        self.conn.send(bytes(response, encoding='utf-8'))
+        self.state = 1
+        return True
+
+    def _get_data(self, info, setcode):
+        payload_len = info[1] & 127
+        fin = 1 if info[0] & 128 == 128 else 0
+        opcode = info[0] & 15  # 提取opcode
+        # 提取载荷数据
+        if payload_len == 126:
+            # extend_payload_len = info[2:4]
+            mask = info[4:8]
+            decoded = info[8:]
+        elif payload_len == 127:
+            # extend_payload_len = info[2:10]
+            mask = info[10:14]
+            decoded = info[14:]
+        else:
+            # extend_payload_len = None
+            mask = info[2:6]
+            decoded = info[6:]
+        bytes_list = bytearray()
+        for i in range(len(decoded)):
+            chunk = decoded[i] ^ mask[i % 4]
+            bytes_list.append(chunk)
+        if opcode == 0x00:
+            opcode = setcode
+        if opcode == 0x01:  # 文本帧
+            body = str(bytes_list, encoding='utf-8')
+            return fin, opcode, body
+        elif opcode == 0x08:
+            self.close()
+            raise IOError('Connection closed by Client.')
+        else:  # 二进制帧或其他，原样返回
+            body = decoded
+            return fin, opcode, body
+
+    def recv(self):
+        msg = self.conn.recv()
+        print(msg)
+        # 处理切片
+        opcode = 0x00
+        # while True:
+        #     raw_data = b''
+        # while True:
+        #     section = self.conn.recv(1024)
+        #     raw_data += section
+        #     if len(section) < 1024:
+        #         break
+        # fin, _opcode, fragment = self._get_data(raw_data, opcode)
+        # opcode = _opcode if _opcode != 0x00 else opcode
+        # msg += fragment
+        # if fin == 1:   # 是否是最后一个分片
+        #     break
+        return msg
+
+    def send(self, msg, fin=True):
+        # 发送数据
+        data = struct.pack('B', 129) if fin else struct.pack('B', 0)
+        msg_len = len(msg)
+        if msg_len <= 125:
+            data += struct.pack('B', msg_len)
+        elif msg_len <= (2 ** 16 - 1):
+            data += struct.pack('!BH', 126, msg_len)
+        elif msg_len <= (2 ** 64 - 1):
+            data += struct.pack('!BQ', 127, msg_len)
+        else:
+            # 分片传输超大内容（应该用不到）
+            while True:
+                fragment = msg[:(2 ** 64 - 1)]
+                msg -= fragment
+                if msg > (2 ** 64 - 1):
+                    self.send(fragment, False)
+                else:
+                    self.send(fragment)
+        data += bytes(msg, encoding='utf-8')
+        self.conn.send(data)
+
+    def ping(self):
+        ping_msg = 0b10001001
+        data = struct.pack('B', ping_msg)
+        data += struct.pack('B', 0)
+        while True:
+            self.conn.send(data)
+            data = self.conn.recv(1024)
+            pong = data[0] & 127
+            if pong != 9:
+                self.close()
+                raise IOError('Connection closed by Client.')
+
+    def close(self):
+        self.conn.close()
+        self.state = -1
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is IOError:
+            print(exc_val)
+        self.close()
 
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -231,22 +383,48 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         print('执行停止')
 
 
-def http():
-    server_address = ('', 8000)
-    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
-    print('Starting server...')
-    httpd.serve_forever()
+def tcp_handler():
+    while True:
+        con, addr = s.accept()
+        print("Accepted. {0}, {1}".format(con, str(addr)))
+        if con:
+            with WebsocketServer(con) as ws:
+                while True:
+                    time.sleep(1)
+                    try:
+                        d = {'data': z_response, 'type': 'pm'}
+                        # d = {'data': np.random.permutation([1, 2, 3, 4, 5, 6]).tolist(), 'type': 'pm'}
+                        ws.send(json.dumps(d))
+                    except Exception as e:
+                        print("pingpong 错误：", e)
+                        break
 
 
-def ws_handler(conn):
-    print("ws_handler")
-    with z_pingpong.WebsocketServer(conn) as ws:
-        while True:
-            time.sleep(1)
-            d = {'data': z_response, 'type': 'pm'}
-            # d = {'data': np.random.permutation([1, 2, 3, 4, 5, 6]).tolist(), 'type': 'pm'}
-            ws.send(json.dumps(d))
-            # print("發送成功")
+def z_udp_socket():
+    # 2. 绑定本地的相关信息，如果一个网络程序不绑定，则系统会随机分配
+    local_addr = ('', 8080)  # ip地址和端口号，ip一般不用写，表示本机的任何一个ip
+    udp_socket.bind(local_addr)
+    while True:
+        try:
+            # 3. 等待接收对方发送的数据
+            recv_data = udp_socket.recvfrom(10240)  # 1024表示本次接收的最大字节数
+            res = recv_data[0].decode('utf8')
+            # res = json.loads(res)
+            array_data = eval(res)
+            deal_rank(array_data)
+
+            con_data = []
+            for k in range(0, len(ranking_array)):
+                con_item = dict(zip(keys, ranking_array[k]))  # 把数组打包成字典
+                con_data.append(
+                    [con_item['name'], con_item['position'], con_item['lapCount']])
+            print(con_data)
+            to_num(con_data)
+        except:
+            print("UDP数据接收出错!")
+            break
+    # 5. 关闭套接字
+    udp_socket.close()
 
 
 if __name__ == '__main__':
@@ -265,7 +443,7 @@ if __name__ == '__main__':
     max_lap_count = 2  # 最大圈
     max_region_count = 35  # 统计一圈的位置差
     keys = ["x1", "y1", "x2", "y2", "con", "name", "position", "direction", "lapCount", "visible", "lastItem"]
-
+    ball_sort = []  # 位置寄存器
     reset_ranking_array()  # 重置排名数组
 
     reset_thread = threading.Thread(target=z_reset)
@@ -276,19 +454,25 @@ if __name__ == '__main__':
     z_response = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     # 1. 创建套接字
     udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    run_thread = threading.Thread(target=z_udp_socket)
-    run_thread.start()
+    print('Udp_socket Server Started.')
+    udp_thread = threading.Thread(target=z_udp_socket)
+    udp_thread.start()
 
     # pingpong
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind(('127.0.0.1', 9999))
+    print('Pingpong Server Started.')
+    local_addr = ('0.0.0.0', 2222)  # ip地址和端口号，ip一般不用写，表示本机的任何一个ip
+    s.bind(local_addr)
     s.listen(1)
-    print('Server Started.')
-    con, addr = s.accept()
-    print("Accepted. {0}, {1}".format(con, str(addr)))
-    p = threading.Thread(target=ws_handler, args=(con,))
+    print('Starting server...')
+    p = threading.Thread(target=tcp_handler)
     p.start()
 
-    # 线程启动
-    http()
+    # 启动 HTTPServer
+    server_address = ('', 8081)
+    httpd = HTTPServer(server_address, SimpleHTTPRequestHandler)
+
+    # 启动HTTP服务器
+    http_thread = threading.Thread(target=httpd.serve_forever)
+    http_thread.start()
