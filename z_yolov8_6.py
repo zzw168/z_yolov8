@@ -170,6 +170,46 @@ def deal_threads(cap, cap_num):
             camera_frame_array[cap_num] = frame
 
 
+def deal_simple():
+    global camera_frame_array
+    color = (0, 255, 0)
+    model = YOLO("best.pt")
+    while True:
+        for cap_num in range(0, len(cap_array)):
+            ret, frame = cap_array[cap_num].read()
+            if not ret:
+                print("读取帧失败")
+                continue
+            results = model.predict(source=frame, show=False, conf=0.5, iou=0.45, imgsz=1280)
+            qiu_array = []
+            if len(results) != 0:  # 整合球的数据
+                names = {0: 'huang', 1: 'xuelan', 2: 'hei', 3: 'cheng', 4: 'tianLan', 5: 'shenLan', 6: 'bai',
+                         7: 'hong',
+                         8: 'zong', 9: 'lv', 10: 'xx_s_yello', 11: 'xx_s_white', 12: 'xx_s_red', 13: 'xx_s_black'}
+                # names = results[0].names
+                result = results[0].boxes.data
+
+                for r in result:
+                    if int(r[5].item()) < 10:
+                        array = [int(r[0].item()), int(r[1].item()), int(r[2].item()), int(r[3].item()),
+                                 round(r[4].item(), 2), names[int(r[5].item())]]
+                        cv2.rectangle(frame, (array[0], array[1]), (array[2], array[3]), color, thickness=3)
+                        cv2.putText(frame, "%s %s" % (array[5], str(array[4])), (array[0], array[1] - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX,
+                                    fontScale=1,
+                                    color=(0, 0, 255), thickness=2)
+                        qiu_array.append(array)
+            if len(qiu_array):  # 处理范围内跟排名
+                # print("处理范围内排名")
+                qiu_array, frame = deal_area(qiu_array, frame, cap_num)  # 统计各个范围内的球，并绘制多边形
+                camera_frame_array[cap_num] = frame
+                if len(qiu_array) > 0:
+                    filter_max_value(qiu_array)
+                    z_udp(str(qiu_array), server_self_rank)  # 发送数据s
+            else:
+                camera_frame_array[cap_num] = frame
+
+
 def show_map():
     target_width, target_height = 960, 540
     cv2.namedWindow("display", cv2.WINDOW_NORMAL)
@@ -213,10 +253,13 @@ if __name__ == "__main__":
     camera_frame_array = {}  # 摄像头图片数组
     camera_create()
 
-    run_thread = {}  # 运行线程
-    for i in range(0, camera_num):
-        run_thread[i] = threading.Thread(target=deal_threads, args=(cap_array[i], i))
-        run_thread[i].start()
+    # run_thread = {}  # 多线程运行，推理效率暴降
+    # for i in range(0, camera_num):
+    #     run_thread[i] = threading.Thread(target=deal_threads, args=(cap_array[i], i))
+    #     run_thread[i].start()
+
+    run_thread = threading.Thread(target=deal_simple)
+    run_thread.start()
 
     show_thread = threading.Thread(target=show_map)
     show_thread.start()
