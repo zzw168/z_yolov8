@@ -14,8 +14,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
 def set_cap(cap):  # 设置视频截图参数（不压缩图片，节省压缩过程时间）
-    W = 1280
-    H = 720
+    W = 1920
+    H = 1080
     fps = 60.0
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, W)
@@ -87,13 +87,14 @@ def deal_area(ball_array, img, code):  # 处理该摄像头内区域
         x = (ball[0] + ball[2]) / 2
         y = (ball[1] + ball[3]) / 2
         point = (x, y)
-        for area in area_Code[code]:
-            pts = np.array(area['coordinates'], np.int32)
-            Result = cv2.pointPolygonTest(pts, point, False)  # -1=在外部,0=在线上，1=在内部
-            if Result > -1.0:
-                ball.append(area['code'])
-                ball.append(area['direction'])
-                ball_area_array.append(ball)
+        if code in area_Code.keys():
+            for area in area_Code[code]:
+                pts = np.array(area['coordinates'], np.int32)
+                Result = cv2.pointPolygonTest(pts, point, False)  # -1=在外部,0=在线上，1=在内部
+                if Result > -1.0:
+                    ball.append(area['code'])
+                    ball.append(area['direction'])
+                    ball_area_array.append(ball)
     if len(ball_area_array) != 0:
         area_array = []
         for ball in ball_area_array:
@@ -122,14 +123,18 @@ def camera_create():  # 初始化摄像头变量
         if not ret:
             print(f'无法读取画面{cap_num}')
             continue
+
         cv2.imwrite(f"{cap_num}.jpg", frame)  # 保存摄像头一帧图片
         cap_array[cap_num] = cap
         camera_frame_array[cap_num] = frame
+        # while cv2.waitKey(1) != 27:
+        #     cv2.imshow("display", frame)
 
 
 def deal_threads(cap, cap_num):
     global camera_frame_array
     color = (0, 255, 0)
+    model = YOLO("best.pt")
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -166,26 +171,32 @@ def deal_threads(cap, cap_num):
 
 
 def show_map():
-    target_width, target_height = 960, 540  # 1920, 1000
-    cv2.namedWindow("display", cv2.WINDOW_GUI_EXPANDED)
+    target_width, target_height = 960, 540
+    cv2.namedWindow("display", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("display", 1600, 1600)
+
     while True:
-        resized_images = []
-        for i, item in enumerate(camera_frame_array):
-            resized_img = cv2.resize(item, (target_width, target_height))
-            # if i == 1:
-            #     resized_img = cv2.flip(resized_img, -1)
-            resized_images.append(resized_img)
         canvas = np.zeros((1080 + target_height, 1920, 3), dtype=np.uint8)
-        canvas[0:target_height, 0:target_width] = resized_images[4]  # 左下角
-        canvas[target_height:1080, 0:target_width] = resized_images[2]  # 右下角
-        canvas[1080:1080 + target_height, 0:target_width] = resized_images[0]  # 左上角
-        canvas[0:target_height, target_width:1920] = resized_images[1]  # 右上角
-        canvas[target_height:1080, target_width:1920] = resized_images[3]  # 左下角
-        canvas[1080:1080 + target_height, target_width:1920] = resized_images[5]  # 右下角
+        canvas[0:target_height, 0: target_width] = cv2.resize(camera_frame_array[0],
+                                                              (target_width, target_height))
+        canvas[target_height:1080, 0: target_width] = cv2.resize(camera_frame_array[1],
+                                                                 (target_width, target_height))
+        canvas[1080:1080 + target_height, 0: target_width] = cv2.resize(camera_frame_array[2],
+                                                                        (target_width, target_height))
+        canvas[0:target_height, target_width: 1920] = cv2.resize(camera_frame_array[3],
+                                                                 (target_width, target_height))
+        canvas[target_height:1080, target_width: 1920] = cv2.resize(camera_frame_array[4],
+                                                                    (target_width, target_height))
+        canvas[1080:1080 + target_height, target_width: 1920] = cv2.resize(camera_frame_array[5],
+                                                                           (target_width, target_height))
 
         cv2.imshow("display", canvas)
-        cv2.waitKey(1)
+
+        key = cv2.waitKey(1)
+        if key == 27:  # 如果按下ESC键，退出循环
+            break
+
+    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
@@ -201,8 +212,6 @@ if __name__ == "__main__":
     cap_array = {}  # 摄像头数组
     camera_frame_array = {}  # 摄像头图片数组
     camera_create()
-
-    model = YOLO("best.pt")
 
     run_thread = {}  # 运行线程
     for i in range(0, camera_num):
