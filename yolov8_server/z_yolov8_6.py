@@ -164,7 +164,7 @@ def deal_threads(cap, cap_num):
             qiu_array, frame = deal_area(qiu_array, frame, cap_num)  # 统计各个范围内的球，并绘制多边形
             camera_frame_array[cap_num] = frame
             if len(qiu_array) > 0:
-                filter_max_value(qiu_array)
+                qiu_array = filter_max_value(qiu_array)
                 z_udp(str(qiu_array), server_self_rank)  # 发送数据s
         else:
             camera_frame_array[cap_num] = frame
@@ -175,6 +175,7 @@ def deal_simple():
     color = (0, 255, 0)
     model = YOLO("best.pt")
     while True:
+        integration_qiu_array = []
         for cap_num in range(0, len(cap_array)):
             ret, frame = cap_array[cap_num].read()
             if not ret:
@@ -203,11 +204,15 @@ def deal_simple():
                 # print("处理范围内排名")
                 qiu_array, frame = deal_area(qiu_array, frame, cap_num)  # 统计各个范围内的球，并绘制多边形
                 camera_frame_array[cap_num] = frame
-                if len(qiu_array) > 0:
-                    filter_max_value(qiu_array)
-                    z_udp(str(qiu_array), server_self_rank)  # 发送数据s
+            if len(qiu_array) > 0:
+                integration_qiu_array.extend(qiu_array)
+                integration_qiu_array = filter_max_value(integration_qiu_array)
+                z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据s
             else:
                 camera_frame_array[cap_num] = frame
+        # if len(integration_qiu_array) > 0:
+        #     integration_qiu_array = filter_max_value(integration_qiu_array)
+        #     z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据s
 
 
 def show_map():
