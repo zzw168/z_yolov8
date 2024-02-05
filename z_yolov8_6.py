@@ -203,16 +203,15 @@ def deal_simple():
             if len(qiu_array):  # 处理范围内跟排名
                 # print("处理范围内排名")
                 qiu_array, frame = deal_area(qiu_array, frame, cap_num)  # 统计各个范围内的球，并绘制多边形
-                camera_frame_array[cap_num] = frame
-            if len(qiu_array) > 0:
                 integration_qiu_array.extend(qiu_array)
-                integration_qiu_array = filter_max_value(integration_qiu_array)
-                z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据s
+                camera_frame_array[cap_num] = frame
+            #     integration_qiu_array = filter_max_value(integration_qiu_array)
+            #     z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据s
             else:
                 camera_frame_array[cap_num] = frame
-        # if len(integration_qiu_array) > 0:
-        #     integration_qiu_array = filter_max_value(integration_qiu_array)
-        #     z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据s
+        if len(integration_qiu_array) > 0:
+            integration_qiu_array = filter_max_value(integration_qiu_array)
+            z_udp(str(integration_qiu_array), server_self_rank)  # 发送数据s
 
 
 def show_map():
@@ -245,10 +244,6 @@ def show_map():
 
 
 if __name__ == "__main__":
-    # server_address = ("127.0.0.1", 8080)
-    server_address = ("192.168.0.161", 19733)
-    server_address_data = ("192.168.0.161", 19734)
-    server_address_rank = ("192.168.0.161", 19732)
     server_self_rank = ("127.0.0.1", 8080)
     camera_num = 6
     area_Code = {}  # 摄像头代码列表
